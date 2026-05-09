@@ -1,0 +1,75 @@
+PRESERVE8
+	THUMB
+	AREA RESET, DATA, READONLY
+
+    EXPORT __Vectors
+
+__Vectors 
+	DCD 0x20001000
+	DCD Reset_Handler
+	ALIGN
+	
+ARR RN R0	
+COUNT RN R1
+SUMALL RN R2
+EVEN_C RN R3
+DIV RN R4
+ELEMENT RN R9
+
+
+	AREA MYRAM, DATA, READWRITE
+
+SUM  DCD 0
+EVEN DCD 0
+DIVISORS_ARR SPACE 10
+
+	AREA MYCODE, CODE, READONLY
+	ENTRY
+	EXPORT Reset_Handler
+	
+EVEN_PROCEDURE 
+	TST ELEMENT, #1 ;  AND with 1, will zero out all bits but the rightmost one
+	BNE FINAL
+	ADD EVEN_C, EVEN_C, ELEMENT
+FINAL BX LR	
+
+POW2
+	MOV DIV, #1
+	MOV R8, ELEMENT
+Loop LSRS R8, R8, #1
+	 BCS final
+	 ADD DIV, DIV, DIV
+	 BCC Loop
+final BX LR	
+
+Reset_Handler
+	LDR R0,=Array
+	LDR R10, =SUM
+	LDR R11, =EVEN
+	LDR R12, =DIVISORS_ARR
+	MOV EVEN_C, #0
+	MOV COUNT, #COUNTER
+	MOV SUMALL,#0 
+	MOV DIV, #1
+
+loop LDRB ELEMENT, [ARR]
+	 ;SECTION D-----------------------------
+	 BL POW2
+	 STR R4, [R12]
+	 ADD R12, R12, #1
+	 ;SECTION C-----------------------------
+	 BL EVEN_PROCEDURE
+	 ;SECTION B-----------------------------
+	 ADD ARR, ARR, #1
+	 ADD SUMALL, SUMALL, ELEMENT
+	 SUBS COUNT, COUNT, #1
+	 BNE loop
+
+	STR SUMALL, [R10]
+	STR EVEN_C, [R11]
+Stop B Stop
+
+Array DCB 34, 56, 27, 156, 200, 68, 128,235, 17, 45
+COUNTER EQU 10
+	
+	 END
